@@ -53,6 +53,26 @@ async function run() {
         res.send(result);
     });
 
+    // ------------Get User--------
+    app.get('/users', async(req, res) => {
+        const { search, email } = req.query;
+        const query = {};
+         if (email) {
+            query.email = email;
+         }
+
+        else if(search){
+            query = {
+                $or: [
+                    { name: { $regex: search, $option: 'i' }},
+                    { email: { $regex: search, $option: 'i' }},
+                ]
+            };
+        };
+        const users = await usersCollection.find(query).toArray();
+        res.send(users)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
