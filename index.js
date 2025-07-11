@@ -27,8 +27,31 @@ async function run() {
     await client.connect();
     const db = client.db('sports-club');
 
+    const usersCollection = db.collection('users');
+    const courtsCollection = db.collection('courts');
+    const bookingsCollection = db.collection('bookings');
+    const paymentsCollection = db.collection('payments');
+    const couponsCollection = db.collection('coupons');
+    const announcementsCollection = db.collection('announcements');    
 
+    // --------------Users All API Here-------------
+    app.post('/users', async (req, res) => {
+        const userInfo = req.body;
+        const {email} = req.body;
 
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+          const existingUser = await usersCollection.findOne({ email });
+
+            if (existingUser) {
+                return res.status(200).json({ message: 'User already exists' });
+            }
+
+        const result = await usersCollection.insertOne(userInfo);
+        res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
