@@ -109,6 +109,43 @@ async function run() {
       res.send(result);
     });
 
+    // Update Booking Status
+// Update Booking Status + Promote User to Member if approved
+app.patch('/bookings/:id', async (req, res) => {
+  const id = req.params.id;
+  const { status, email } = req.body;
+
+  const filter = { _id: new ObjectId(id) };
+  const updatedDocs = {
+    $set: { status }
+  };
+
+  const result = await bookingsCollection.updateOne(filter, updatedDocs);
+
+  // If approved, promote user to member
+  if (status === 'approved') {
+    const updateUserRole = {
+      $set: {
+        role: 'member',
+        memberSince: new Date().toISOString(),
+      }
+    };
+
+    const userResult = await usersCollection.updateOne(
+      { email },
+      updateUserRole
+    );
+
+    return res.send({
+      bookingUpdate: result,
+      userUpdate: userResult,
+    });
+  }
+
+  res.send(result);
+});
+
+
     // Delete Bookings
     app.delete('/bookings/:id', async(req, res) => {
       const id = req.params.id;
