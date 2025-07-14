@@ -93,6 +93,22 @@ async function run() {
       res.send(result)
     });
 
+    // Get bookings
+    app.get('/bookings', async(req, res)=>{
+      const {email, status} = req.query;
+
+      const query = {};
+      if (email) {
+        query.userEmail = email;
+      };
+      if (status) {
+        query.status=status;
+      };
+
+      const result = await bookingsCollection.find(query).toArray();
+      res.send(result);
+    })
+
     // ---------- All Courts API here -----------------
     // Post Courts
     app.post('/courts', async(req, res) => {
