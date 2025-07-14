@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 dotenv.config();
 
@@ -106,6 +106,14 @@ async function run() {
       };
 
       const result = await bookingsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // Delete Bookings
+    app.delete('/bookings/:id', async(req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await bookingsCollection.deleteOne(filter);
       res.send(result);
     })
 
