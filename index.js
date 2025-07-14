@@ -73,6 +73,26 @@ async function run() {
         res.send(users)
     })
 
+    // ------------- All Bookings API --------------
+    // Post Booking
+    app.post('/bookings', async(req, res) => {
+      const booking = req.body;
+
+        // Validation
+        const requiredFields = ['userEmail', 'courtId', 'courtTitle', 'courtType', 'date', 'slots', 'price'];
+        const missingField = requiredFields.find(field => !booking[field]);
+
+        if (missingField) {
+          return res.status(400).json({ message: `Missing field: ${missingField}` });
+        }
+
+        booking.status = 'pending';
+        booking.createdAt = new Date().toISOString();
+
+      const result = await bookingsCollection.insertOne(booking);
+      res.send(result)
+    });
+
     // ---------- All Courts API here -----------------
     // Post Courts
     app.post('/courts', async(req, res) => {
