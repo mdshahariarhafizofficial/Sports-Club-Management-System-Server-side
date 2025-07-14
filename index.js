@@ -73,6 +73,20 @@ async function run() {
         res.send(users)
     })
 
+    // ---------- All Courts API here -----------------
+    // Post Courts
+    app.post('/courts', async(req, res) => {
+      const courtData = req.body;
+      const result = await courtsCollection.insertOne(courtData);
+      res.send(result)
+    })
+
+    // Get Courts
+    app.get('/courts', async(req, res) => {
+      const result = await courtsCollection.find().toArray();
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
