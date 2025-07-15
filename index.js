@@ -259,11 +259,30 @@ app.post('/create-payment-intent', async (req, res) => {
 });
 
 // Payment History
+
+// Post
 app.post('/payments', async(req, res) => {
   const paymentData = req.body;
+  paymentData.status = "paid";
+
   const result = await paymentsCollection.insertOne(paymentData);
-  res.send(result) 
-})
+
+  // update Booking Status
+  const bookingId = paymentData.bookingId;
+  const filter = {_id: new ObjectId(bookingId)};
+  const update = {$set: {status: 'confirmed'}};
+  const bookingResult = await bookingsCollection.updateOne(filter, update);
+
+  res.send(result, bookingResult) 
+});
+
+// Get Payments History
+app.get('/payments', async (req, res) => {
+  const { email } = req.query;
+  const payments = await paymentsCollection.find({ email }).toArray();
+  res.send(payments);
+});
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
