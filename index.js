@@ -109,6 +109,13 @@ async function run() {
       res.send(result);
     });
 
+    // Get single Booking
+    app.get('/bookings/:id', async (req, res) => {
+      const id = req.params.id;
+      const result = await bookingsCollection.findOne({_id: new ObjectId(id)});
+      res.send(result)
+    })
+
     // Update Booking Status
 // Update Booking Status + Promote User to Member if approved
 app.patch('/bookings/:id', async (req, res) => {
