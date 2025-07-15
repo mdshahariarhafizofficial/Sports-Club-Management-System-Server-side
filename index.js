@@ -209,6 +209,23 @@ app.patch('/bookings/:id', async (req, res) => {
       res.send(result);
     })
 
+    // Validate Coupon
+    app.post('/validate-coupon', async (req, res) => {
+      const {code} = req.body;
+
+      const coupon = await couponsCollection.findOne({code});
+
+      if (!coupon) {
+        return res.send({ valid: false });
+      }
+      
+      return res.send({
+      valid: true,
+      discountAmount: coupon.discountAmount,
+    });
+
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
