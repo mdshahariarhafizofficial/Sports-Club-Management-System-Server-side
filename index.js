@@ -175,6 +175,40 @@ app.patch('/bookings/:id', async (req, res) => {
       res.send(result);
     })
 
+    // ---------- Coupons All API here -------------
+
+    // Post
+    app.post('/coupons', async(req, res) => {
+      const couponData = req.body;
+      const result = await couponsCollection.insertOne(couponData);
+      res.send(result)
+    })
+
+    // Get Coupons
+    app.get('/coupons', async (req, res) => {
+      const result = await couponsCollection.find().toArray();
+      res.send(result)
+    })
+
+    // Update Api
+    app.patch('/coupons/:id', async (req, res) => {
+      const id = req.params.id;
+      const updateData = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDocs = {
+        $set: updateData
+      };
+      const result = await couponsCollection.updateOne(filter, updatedDocs);
+      res.send(result)
+    });
+
+    // Delete
+    app.delete('/coupons/:id', async(req, res) => {
+      const id = req.params.id;
+      const result = await couponsCollection.deleteOne({_id: new ObjectId(id)});
+      res.send(result);
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
