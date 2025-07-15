@@ -2,8 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
 dotenv.config();
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); 
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -218,13 +219,51 @@ app.patch('/bookings/:id', async (req, res) => {
       if (!coupon) {
         return res.send({ valid: false });
       }
-      
+
       return res.send({
       valid: true,
       discountAmount: coupon.discountAmount,
     });
 
     });
+
+
+  // ---------------- Payments Api here ------------
+
+// Create Payment Intent API
+app.post('/create-payment-intent', async (req, res) => {
+  try {
+    const { price } = req.body;
+
+    // Validate price
+    if (!price || price <= 0) {
+      return res.status(400).send({ error: 'Invalid price' });
+    }
+
+    // Convert to smallest currency unit (৳ → poisha)
+    const amount = parseInt(price * 100);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'bdt', // or 'usd' depending on your currency
+      payment_method_types: ['card'],
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    res.status(500).send({ error: 'Failed to create payment intent' });
+  }
+});
+
+// Payment History
+app.post('/payments', async(req, res) => {
+  const paymentData = req.body;
+  const result = await paymentsCollection.insertOne(paymentData);
+  res.send(result) 
+})
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
