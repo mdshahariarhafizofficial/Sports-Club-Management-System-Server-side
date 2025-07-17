@@ -96,15 +96,20 @@ async function run() {
 
     // Get bookings
     app.get('/bookings', async(req, res)=>{
-      const {email, status} = req.query;
+      const {email, status,search} = req.query;
 
-      const query = {};
+      let query = {};
       if (email) {
         query.userEmail = email;
       };
       if (status) {
         query.status=status;
       };
+      if (search) {
+            query = {
+            courtTitle: { $regex: search, $options: 'i' }
+            };
+      }
 
       const result = await bookingsCollection.find(query).toArray();
       res.send(result);
