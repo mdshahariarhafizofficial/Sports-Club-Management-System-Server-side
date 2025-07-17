@@ -74,6 +74,27 @@ async function run() {
         res.send(users)
     })
 
+    // Members API
+    app.get('/members', async (req, res) => {
+      const {search} = req.query;
+      const query = {
+        role: 'member',
+        ...(search && {
+          name: {$regex: search, $options: "i"}
+        }),
+      };      
+      const members = await usersCollection.find(query).toArray();
+      res.send(members);
+
+    });
+
+    // Delete Member
+    app.delete('/members/:id', async (req, res) => {
+      const id = req.params.id;
+      const result = await usersCollection.deleteOne({_id: new ObjectId(id)});
+      res.send(result);
+    })
+
     // ------------- All Bookings API --------------
     // Post Booking
     app.post('/bookings', async(req, res) => {
