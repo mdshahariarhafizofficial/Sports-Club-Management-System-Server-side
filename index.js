@@ -334,8 +334,46 @@ app.get('/admin-stats', async(req, res) => {
   res.send({ totalCourts, totalUsers, totalMembers });
 });
 
+// ---------- Announcements API ------------
+
+// POST API
+app.post('/announcements', async(req, res) => {
+  const data = req.body;
+  const result = await announcementsCollection.insertOne(data);
+  res.send(result);
+})
+
+// GET API
+app.get('/announcements', async(req, res) => {
+  const result = await announcementsCollection.find().toArray();
+  res.send(result);
+});
+
+// Patch API
+app.patch('/announcements/:id', async (req, res) => {
+  const id = req.params.id;
+  const updateData = req.body;
+  const filter = {_id: new ObjectId(id)};
+  const updatedDocs = {
+    $set: {
+      updateData,
+    }
+  };
+
+  const result = await announcementsCollection.updateOne(filter, updatedDocs);
+  res.send(result)
+});
+
+// Delete API
+app.delete('/announcements/:id', async (req, res) => {
+  const id = req.params.id;
+  const result = await announcementsCollection.deleteOne({_id: new ObjectId(id)});
+  res.send(result)
+});
 
 
+
+// -------------------------------------
   } finally {
     // keep connection alive
   }
