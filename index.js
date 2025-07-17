@@ -298,6 +298,23 @@ app.get('/payments', async (req, res) => {
       res.send('SCMS Server is Running');
     });
 
+// Get counter Data
+app.get('/admin-stats', async(req, res) => {
+  const email = req.query.email;
+  const user = await usersCollection.findOne({email});
+
+  if (user?.role !== 'admin') {
+     return res.status(403).send({ message: 'forbidden' });
+  }
+
+  const totalCourts = await courtsCollection.estimatedDocumentCount();
+  const totalUsers = await usersCollection.estimatedDocumentCount();
+  const totalMembers = await usersCollection.countDocuments({role: 'member'});
+  res.send({ totalCourts, totalUsers, totalMembers });
+});
+
+
+
   } finally {
     // keep connection alive
   }
