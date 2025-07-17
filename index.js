@@ -57,7 +57,7 @@ async function run() {
     // ------------Get User--------
     app.get('/users', async(req, res) => {
         const { search, email } = req.query;
-        const query = {};
+        let query = {};
          if (email) {
             query.email = email;
          }
@@ -65,8 +65,8 @@ async function run() {
         else if(search){
             query = {
                 $or: [
-                    { name: { $regex: search, $option: 'i' }},
-                    { email: { $regex: search, $option: 'i' }},
+                    { name: { $regex: search, $options: 'i' }},
+                    { email: { $regex: search, $options: 'i' }},
                 ]
             };
         };
