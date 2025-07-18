@@ -382,9 +382,7 @@ app.patch('/announcements/:id', async (req, res) => {
   const updateData = req.body;
   const filter = {_id: new ObjectId(id)};
   const updatedDocs = {
-    $set: {
-      updateData,
-    }
+    $set: updateData,
   };
 
   const result = await announcementsCollection.updateOne(filter, updatedDocs);
