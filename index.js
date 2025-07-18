@@ -198,7 +198,34 @@ app.patch('/bookings/:id', async (req, res) => {
 
     // Get Courts
     app.get('/courts', async(req, res) => {
-      const result = await courtsCollection.find().toArray();
+      const search = req.query.search;
+      let query = {};
+      
+      if (search) {
+        query = {
+          name: {$regex: search, $options: "i"}}
+      }
+
+      const result = await courtsCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    // Update Courts
+    app.patch('/courts/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateData = req.body;
+      const updatedDocs = {
+        $set: updateData,
+      }
+      const result = await courtsCollection.updateOne(filter, updatedDocs);
+      res.send(result)
+    });
+
+    // Delete Courts
+    app.delete('/courts/:id', async (req, res) => {
+      const id = req.params.id;
+      const result = await courtsCollection.deleteOne({_id: new ObjectId(id)});
       res.send(result);
     })
 
