@@ -44,6 +44,37 @@ async function run() {
     const couponsCollection = db.collection('coupons');
     const announcementsCollection = db.collection('announcements');    
 
+    // ----------------- Custom Middleware --------------
+    
+    // FB Token Verify
+    const verifyFBToken = async (req, res, next) => {
+      const token = req?.headers?.authorization?.split(' ')[1];
+
+      if (!token) {
+        return res.status(401).send({message: 'unauthorized Access!'});
+      }
+
+      try{
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.decoded = decoded;
+        next()
+      }
+      catch(error) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+    }
+
+    // Verify Admin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const user = await usersCollection.findOne({email});
+      if (user.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    }
+
+
     // --------------Users All API Here-------------
     app.post('/users', async (req, res) => {
         const userInfo = req.body;
@@ -64,7 +95,7 @@ async function run() {
     });
 
     // ------------Get User--------
-    app.get('/users', async(req, res) => {
+    app.get('/users', verifyFBToken, async(req, res) => {
         const { search, email } = req.query;
         let query = {};
          if (email) {
@@ -84,7 +115,7 @@ async function run() {
     });
 
     // Get User Role
-    app.get('/users/:email/role', async (req, res) => {
+    app.get('/users/:email/role', verifyFBToken, async (req, res) => {
       const email = req.params.email;
 
       if (!email) {
@@ -101,7 +132,7 @@ async function run() {
     })
 
     // Members API
-    app.get('/members', async (req, res) => {
+    app.get('/members', verifyFBToken, verifyAdmin, async (req, res) => {
       const {search} = req.query;
       const query = {
         role: 'member',
@@ -115,7 +146,7 @@ async function run() {
     });
 
     // Delete Member
-    app.delete('/members/:id', async (req, res) => {
+    app.delete('/members/:id', verifyFBToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const result = await usersCollection.deleteOne({_id: new ObjectId(id)});
       res.send(result);
@@ -123,7 +154,7 @@ async function run() {
 
     // ------------- All Bookings API --------------
     // Post Booking
-    app.post('/bookings', async(req, res) => {
+    app.post('/bookings', verifyFBToken, async(req, res) => {
       const booking = req.body;
 
         // Validation
@@ -142,7 +173,7 @@ async function run() {
     });
 
     // Get bookings
-    app.get('/bookings', async(req, res)=>{
+    app.get('/bookings', verifyFBToken, async(req, res)=>{
       const {email, status,search} = req.query;
 
       let query = {};
@@ -163,7 +194,7 @@ async function run() {
     });
 
     // Get single Booking
-    app.get('/bookings/:id', async (req, res) => {
+    app.get('/bookings/:id', verifyFBToken, async (req, res) => {
       const id = req.params.id;
       const result = await bookingsCollection.findOne({_id: new ObjectId(id)});
       res.send(result)
@@ -171,7 +202,7 @@ async function run() {
 
     // Update Booking Status
 // Update Booking Status + Promote User to Member if approved
-app.patch('/bookings/:id', async (req, res) => {
+app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
   const { status, email } = req.body;
 
@@ -207,7 +238,7 @@ app.patch('/bookings/:id', async (req, res) => {
 
 
     // Delete Bookings
-    app.delete('/bookings/:id', async(req, res) => {
+    app.delete('/bookings/:id', verifyFBToken, verifyAdmin, async(req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const result = await bookingsCollection.deleteOne(filter);
@@ -216,14 +247,14 @@ app.patch('/bookings/:id', async (req, res) => {
 
     // ---------- All Courts API here -----------------
     // Post Courts
-    app.post('/courts', async(req, res) => {
+    app.post('/courts', verifyFBToken, verifyAdmin, async(req, res) => {
       const courtData = req.body;
       const result = await courtsCollection.insertOne(courtData);
       res.send(result)
     })
 
     // Get Courts
-    app.get('/courts', async(req, res) => {
+    app.get('/courts', verifyFBToken, async(req, res) => {
       const search = req.query.search;
       let query = {};
       
@@ -237,7 +268,7 @@ app.patch('/bookings/:id', async (req, res) => {
     })
 
     // Update Courts
-    app.patch('/courts/:id', async (req, res) => {
+    app.patch('/courts/:id', verifyFBToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)};
       const updateData = req.body;
@@ -249,7 +280,7 @@ app.patch('/bookings/:id', async (req, res) => {
     });
 
     // Delete Courts
-    app.delete('/courts/:id', async (req, res) => {
+    app.delete('/courts/:id', verifyFBToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const result = await courtsCollection.deleteOne({_id: new ObjectId(id)});
       res.send(result);
@@ -258,20 +289,20 @@ app.patch('/bookings/:id', async (req, res) => {
     // ---------- Coupons All API here -------------
 
     // Post
-    app.post('/coupons', async(req, res) => {
+    app.post('/coupons', verifyFBToken, verifyAdmin, async(req, res) => {
       const couponData = req.body;
       const result = await couponsCollection.insertOne(couponData);
       res.send(result)
     })
 
     // Get Coupons
-    app.get('/coupons', async (req, res) => {
+    app.get('/coupons', verifyFBToken, async (req, res) => {
       const result = await couponsCollection.find().toArray();
       res.send(result)
     })
 
     // Update Api
-    app.patch('/coupons/:id', async (req, res) => {
+    app.patch('/coupons/:id', verifyFBToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const updateData = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -283,14 +314,14 @@ app.patch('/bookings/:id', async (req, res) => {
     });
 
     // Delete
-    app.delete('/coupons/:id', async(req, res) => {
+    app.delete('/coupons/:id', verifyFBToken, verifyAdmin, async(req, res) => {
       const id = req.params.id;
       const result = await couponsCollection.deleteOne({_id: new ObjectId(id)});
       res.send(result);
     })
 
     // Validate Coupon
-    app.post('/validate-coupon', async (req, res) => {
+    app.post('/validate-coupon', verifyFBToken, async (req, res) => {
       const {code} = req.body;
 
       const coupon = await couponsCollection.findOne({code});
@@ -310,7 +341,7 @@ app.patch('/bookings/:id', async (req, res) => {
   // ---------------- Payments Api here ------------
 
 // Create Payment Intent API
-app.post('/create-payment-intent', async (req, res) => {
+app.post('/create-payment-intent', verifyFBToken, async (req, res) => {
   try {
     const { price } = req.body;
 
@@ -340,7 +371,7 @@ app.post('/create-payment-intent', async (req, res) => {
 // Payment History
 
 // Post
-app.post('/payments', async(req, res) => {
+app.post('/payments', verifyFBToken, async(req, res) => {
   const paymentData = req.body;
   paymentData.status = "paid";
 
@@ -356,7 +387,7 @@ app.post('/payments', async(req, res) => {
 });
 
 // Get Payments History
-app.get('/payments', async (req, res) => {
+app.get('/payments', verifyFBToken, async (req, res) => {
   const { email } = req.query;
   const payments = await paymentsCollection.find({ email }).toArray();
   res.send(payments);
@@ -367,13 +398,8 @@ app.get('/payments', async (req, res) => {
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-    // Example test route
-    app.get('/', (req, res) => {
-      res.send('SCMS Server is Running');
-    });
-
 // Get counter Data
-app.get('/admin-stats', async(req, res) => {
+app.get('/admin-stats', verifyFBToken, verifyAdmin, async(req, res) => {
   const email = req.query.email;
   const user = await usersCollection.findOne({email});
 
@@ -390,20 +416,20 @@ app.get('/admin-stats', async(req, res) => {
 // ---------- Announcements API ------------
 
 // POST API
-app.post('/announcements', async(req, res) => {
+app.post('/announcements', verifyFBToken, verifyAdmin, async(req, res) => {
   const data = req.body;
   const result = await announcementsCollection.insertOne(data);
   res.send(result);
 })
 
 // GET API
-app.get('/announcements', async(req, res) => {
+app.get('/announcements', verifyFBToken, async(req, res) => {
   const result = await announcementsCollection.find().toArray();
   res.send(result);
 });
 
 // Patch API
-app.patch('/announcements/:id', async (req, res) => {
+app.patch('/announcements/:id', verifyFBToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
   const updateData = req.body;
   const filter = {_id: new ObjectId(id)};
@@ -416,13 +442,16 @@ app.patch('/announcements/:id', async (req, res) => {
 });
 
 // Delete API
-app.delete('/announcements/:id', async (req, res) => {
+app.delete('/announcements/:id', verifyFBToken, verifyAdmin, async (req, res) => {
   const id = req.params.id;
   const result = await announcementsCollection.deleteOne({_id: new ObjectId(id)});
   res.send(result)
 });
 
-
+// Example test route
+    app.get('/', (req, res) => {
+      res.send('SCMS Server is Running');
+    });
 
 // -------------------------------------
   } finally {
