@@ -450,7 +450,7 @@ app.delete('/announcements/:id', verifyFBToken, verifyAdmin, async (req, res) =>
 });
 
 // ---------------- Ratings Api here ------------
-app.post('/ratings', async (req, res) => {
+app.post('/ratings', verifyFBToken, async (req, res) => {
   const newRating = req.body;
   newRating.createdAt = new Date();
 
@@ -461,10 +461,15 @@ app.post('/ratings', async (req, res) => {
 // Get Api
 app.get('/ratings', async (req, res) => {
   const courtId = req.query.courtId;
+  const email = req.query.email;
   let query = {};
   
   if (courtId) {
-    query = { courtId };
+    query.courtId = courtId;
+  }
+  
+  if (email) {
+   query.userEmail = email;
   }
 
   const result = await ratingsCollection.find(query).sort({ createdAt: -1 }).toArray();
@@ -472,7 +477,7 @@ app.get('/ratings', async (req, res) => {
 });
 
 // Patch Api
-app.patch('/ratings/:id', async (req, res) => {
+app.patch('/ratings/:id', verifyFBToken, async (req, res) => {
   const id = req.params.id;
   const updatedRating = req.body;
 
@@ -484,7 +489,7 @@ app.patch('/ratings/:id', async (req, res) => {
 });
 
 // Delete Api
-app.delete('/ratings/:id', async (req, res) => {
+app.delete('/ratings/:id', verifyFBToken, async (req, res) => {
   const id = req.params.id;
   const result = await ratingsCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
