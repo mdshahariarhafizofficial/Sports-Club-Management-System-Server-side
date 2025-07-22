@@ -247,6 +247,13 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
     })
 
     // ---------- All Courts API here -----------------
+
+    // Courts Count
+    app.get('/courtsCount', async(req, res) => {
+      const result = await courtsCollection.estimatedDocumentCount();
+      res.send({totalCourtsCount: result})
+    })
+
     // Post Courts
     app.post('/courts', verifyFBToken, verifyAdmin, async(req, res) => {
       const courtData = req.body;
@@ -255,8 +262,14 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
     })
 
     // Get Courts
-    app.get('/courts', verifyFBToken, async(req, res) => {
+    app.get('/courts', async(req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
       const search = req.query.search;
+      const type = req.query.type;
+      const slot = req.query.slot;
+      const sort = req.query.sort;
+
       let query = {};
       
       if (search) {
@@ -264,7 +277,35 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
           name: {$regex: search, $options: "i"}}
       }
 
-      const result = await courtsCollection.find(query).toArray();
+      if (type) {
+        query.type = type;
+      }
+      
+      if (slot) {
+        if (slot === "Morning") {
+          query.slots = {$elemMatch: {$regex: 'Am'}};
+        }
+        else if (slot === "Afternoon") {
+        query.slots = { $elemMatch: { $regex: '^1|2|3|4:.*PM$' } };
+        }
+        else if (slot === "Evening") {
+        query.slots = { $elemMatch: { $regex: '^5|6|7|8|9:.*PM$' } };
+        }
+      }
+
+      let sortOption = {};
+      if (sort === 'LowToHigh') {
+        sortOption.pricePerSession = 1;
+      }else if(sort === 'HighToLow'){
+        sortOption.pricePerSession = -1;
+      }
+
+      const result = await courtsCollection
+      .find(query)
+      .sort(sortOption)
+      .skip(page * size)
+      .limit(size)
+      .toArray();
       res.send(result);
     })
 
@@ -500,6 +541,113 @@ app.delete('/ratings/:id', verifyFBToken, async (req, res) => {
     app.get('/', (req, res) => {
       res.send('SCMS Server is Running');
     });
+
+
+// Aggregation Code
+app.get("/popular-courts", async (req, res) => {
+  try {
+    const result = await ratingsCollection.aggregate([
+      {
+        $group: {
+          _id: "$courtId", // this is a string
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { averageRating: -1, totalRatings: -1 },
+      },
+      {
+        $limit: 6,
+      },
+      {
+        $addFields: {
+          courtObjectId: { $toObjectId: "$_id" }, // convert courtId string to ObjectId
+        },
+      },
+      {
+        $lookup: {
+          from: "courts",
+          localField: "courtObjectId",
+          foreignField: "_id",
+          as: "courtDetails",
+        },
+      },
+      {
+        $unwind: "$courtDetails",
+      },
+      {
+        $project: {
+          _id: "$courtDetails._id",
+          name: "$courtDetails.name",
+          type: "$courtDetails.type",
+          image: "$courtDetails.image",
+          location: "$courtDetails.location",
+          pricePerSession: "$courtDetails.pricePerSession",
+          averageRating: 1,
+          totalRatings: 1,
+        },
+      },
+    ]).toArray();
+
+    res.send(result);
+  } catch (error) {
+    console.error("Error fetching popular courts:", error);
+    res.status(500).send({ error: "Failed to fetch popular courts" });
+  }
+});
+
+
+
+app.get("/popular-courts", async (req, res) => {
+  try {
+    const result = await ratingsCollection.aggregate([
+      {
+        $group: {
+          _id: "$courtId",
+          averageRating: { $avg: "$rating" },
+          totalRatings: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { averageRating: -1, totalRatings: -1 },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $lookup: {
+          from: "courts",
+          localField: "_id",
+          foreignField: "_id",
+          as: "courtDetails",
+        },
+      },
+      {
+        $unwind: "$courtDetails",
+      },
+      {
+        $project: {
+          _id: "$courtDetails._id",
+          name: "$courtDetails.name",
+          type: "$courtDetails.type",
+          image: "$courtDetails.image",
+          location: "$courtDetails.location",
+          pricePerSession: "$courtDetails.pricePerSession",
+          averageRating: 1,
+          totalRatings: 1,
+        },
+      },
+    ]).toArray();
+
+    res.send(result);
+  } catch (error) {
+    console.error("Error fetching popular courts:", error);
+    res.status(500).send({ error: "Failed to fetch popular courts" });
+  }
+});
+
+
 
 // -------------------------------------
   } finally {
