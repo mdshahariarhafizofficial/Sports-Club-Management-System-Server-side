@@ -42,7 +42,8 @@ async function run() {
     const bookingsCollection = db.collection('bookings');
     const paymentsCollection = db.collection('payments');
     const couponsCollection = db.collection('coupons');
-    const announcementsCollection = db.collection('announcements');    
+    const announcementsCollection = db.collection('announcements');
+    const ratingsCollection = db.collection('ratings');    
 
     // ----------------- Custom Middleware --------------
     
@@ -238,7 +239,7 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
 
 
     // Delete Bookings
-    app.delete('/bookings/:id', verifyFBToken, verifyAdmin, async(req, res) => {
+    app.delete('/bookings/:id', verifyFBToken, async(req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const result = await bookingsCollection.deleteOne(filter);
@@ -296,7 +297,7 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
     })
 
     // Get Coupons
-    app.get('/coupons', verifyFBToken, async (req, res) => {
+    app.get('/coupons', async (req, res) => {
       const result = await couponsCollection.find().toArray();
       res.send(result)
     })
@@ -447,6 +448,48 @@ app.delete('/announcements/:id', verifyFBToken, verifyAdmin, async (req, res) =>
   const result = await announcementsCollection.deleteOne({_id: new ObjectId(id)});
   res.send(result)
 });
+
+// ---------------- Ratings Api here ------------
+app.post('/ratings', async (req, res) => {
+  const newRating = req.body;
+  newRating.createdAt = new Date();
+
+  const result = await ratingsCollection.insertOne(newRating);
+  res.send(result);
+});
+
+// Get Api
+app.get('/ratings', async (req, res) => {
+  const courtId = req.query.courtId;
+  let query = {};
+  
+  if (courtId) {
+    query = { courtId };
+  }
+
+  const result = await ratingsCollection.find(query).sort({ createdAt: -1 }).toArray();
+  res.send(result);
+});
+
+// Patch Api
+app.patch('/ratings/:id', async (req, res) => {
+  const id = req.params.id;
+  const updatedRating = req.body;
+
+  const result = await ratingsCollection.updateOne(
+    { _id: new ObjectId(id) },
+    { $set: updatedRating }
+  );
+  res.send(result);
+});
+
+// Delete Api
+app.delete('/ratings/:id', async (req, res) => {
+  const id = req.params.id;
+  const result = await ratingsCollection.deleteOne({ _id: new ObjectId(id) });
+  res.send(result);
+});
+
 
 // Example test route
     app.get('/', (req, res) => {
