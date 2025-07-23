@@ -293,7 +293,7 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
       
       if (slot) {
         if (slot === "Morning") {
-          query.slots = {$elemMatch: {$regex: 'Am'}};
+          query.slots = { $elemMatch: { $regex: 'AM$', $options: 'i' } };
         }
         else if (slot === "Afternoon") {
         query.slots = { $elemMatch: { $regex: '^1|2|3|4:.*PM$' } };
