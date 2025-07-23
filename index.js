@@ -111,7 +111,10 @@ async function run() {
                 ]
             };
         };
-        const users = await usersCollection.find(query).toArray();
+        const users = await usersCollection
+        .find(query)
+        .sort({ createdAt: -1 })
+        .toArray();
         res.send(users)
     });
 
@@ -123,7 +126,8 @@ async function run() {
         return res.status(400).send({ message: "Email is required" });
       }
 
-      const user = await usersCollection.findOne({email});
+      const user = await usersCollection
+      .findOne({email});
 
       if (!user) {
          return res.status(404).send({ message: "User not found" });
@@ -141,7 +145,10 @@ async function run() {
           name: {$regex: search, $options: "i"}
         }),
       };      
-      const members = await usersCollection.find(query).toArray();
+      const members = await usersCollection
+      .find(query)
+      .sort({ memberSince: -1 })
+      .toArray();
       res.send(members);
 
     });
@@ -190,7 +197,10 @@ async function run() {
             };
       }
 
-      const result = await bookingsCollection.find(query).toArray();
+      const result = await bookingsCollection
+      .find(query)
+      .sort({ date: -1 })
+      .toArray();
       res.send(result);
     });
 
@@ -339,7 +349,9 @@ app.patch('/bookings/:id', verifyFBToken, verifyAdmin, async (req, res) => {
 
     // Get Coupons
     app.get('/coupons', async (req, res) => {
-      const result = await couponsCollection.find().toArray();
+      const result = await couponsCollection
+      .find()
+      .toArray();
       res.send(result)
     })
 
@@ -431,7 +443,10 @@ app.post('/payments', verifyFBToken, async(req, res) => {
 // Get Payments History
 app.get('/payments', verifyFBToken, async (req, res) => {
   const { email } = req.query;
-  const payments = await paymentsCollection.find({ email }).toArray();
+  const payments = await paymentsCollection
+  .find({ email })
+  .sort({ date: -1 })
+  .toArray();
   res.send(payments);
 });
 
@@ -466,7 +481,10 @@ app.post('/announcements', verifyFBToken, verifyAdmin, async(req, res) => {
 
 // GET API
 app.get('/announcements', verifyFBToken, async(req, res) => {
-  const result = await announcementsCollection.find().toArray();
+  const result = await announcementsCollection
+  .find()
+  .sort({ postAt: -1 })
+  .toArray();
   res.send(result);
 });
 
@@ -596,8 +614,6 @@ app.get("/popular-courts", async (req, res) => {
     res.status(500).send({ error: "Failed to fetch popular courts" });
   }
 });
-
-
 
 app.get("/popular-courts", async (req, res) => {
   try {
