@@ -8,6 +8,8 @@ var admin = require("firebase-admin");
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); 
 
 const app = express();
+
+// Port
 const port = process.env.PORT || 5000;
 
 // Middlewares
