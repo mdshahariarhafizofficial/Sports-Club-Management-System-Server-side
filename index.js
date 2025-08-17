@@ -145,6 +145,38 @@ async function run() {
       res.send({ role: user.role || "user" })
     })
 
+// Update user by email (PATCH)
+app.patch("/users/:email", async (req, res) => {
+  const email = req.params.email;
+  const updateData = { ...req.body };
+
+  if (!email) return res.status(400).send({ message: "Email is required" });
+
+  // Prevent updating _id
+  if (updateData._id) delete updateData._id;
+
+  try {
+    const result = await usersCollection.updateOne(
+      { email },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    const updatedUser = await usersCollection.findOne({ email });
+    res.send(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error" });
+  }
+});
+
+
+
+
+
     // Members API
     app.get('/members', verifyFBToken, verifyAdmin, async (req, res) => {
       const {search} = req.query;
@@ -671,7 +703,7 @@ app.patch('/ratings/:id', verifyFBToken, async (req, res) => {
 });
 
 // Delete Api
-app.delete('/ratings/:id', verifyFBToken, async (req, res) => {
+app.delete('/ratings/:id', verifyFBToken , async (req, res) => {
   const id = req.params.id;
   const result = await ratingsCollection.deleteOne({ _id: new ObjectId(id) });
   res.send(result);
