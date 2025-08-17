@@ -183,6 +183,24 @@ async function run() {
       res.send(result)
     });
 
+
+// ✅ মোট বুকিং সংখ্যা
+app.get("/api/bookings/count", async (req, res) => {
+    const totalCount = await bookingsCollection.countDocuments();
+    res.send({ totalBookings: totalCount });
+});
+
+    // ✅ নির্দিষ্ট ইউজারের বুকিং সংখ্যা
+    app.get("/api/bookings/count/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const userCount = await bookingsCollection.countDocuments({ userEmail: email });
+        res.json({ userEmail: email, totalBookings: userCount });
+      } catch (error) {
+        res.status(500).json({ error: "Failed to fetch user bookings" });
+      }
+    });    
+
     // Get bookings
     app.get('/bookings', verifyFBToken, async(req, res)=>{
       const {email, status,search} = req.query;
