@@ -98,6 +98,12 @@ async function run() {
         res.send(result);
     });
 
+    // Get users Count
+    app.get("/api/users/count", async (req, res) => {
+        const totalCount = await usersCollection.countDocuments();
+        res.send({ totalUsers: totalCount });
+    });    
+
     // ------------Get User--------
     app.get('/users', verifyFBToken, async(req, res) => {
         const { search, email } = req.query;
@@ -224,6 +230,66 @@ app.get("/api/bookings/count", async (req, res) => {
       .toArray();
       res.send(result);
     });
+
+// GET /api/bookings/pending/total
+app.get("/api/bookings/pending/total", async (req, res) => {
+  try {
+    const { role, email } = req.query; // frontend থেকে query param হিসেবে পাঠানো হবে
+
+    // filter বানানো: admin হলে সব, না হলে শুধু user-এর
+    const filter = role === "admin" ? { status: "pending" } : { status: "pending", userEmail: email };
+
+    const pendingBookings = await bookingsCollection.find(filter).toArray();
+
+    const totalPending = pendingBookings.length;
+
+    res.send({ totalPending });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to fetch total pending bookings" });
+  }
+});
+
+// GET /api/bookings/approved/total
+app.get("/api/bookings/approved/total", async (req, res) => {
+  try {
+    const { role, email } = req.query; // frontend থেকে query param হিসেবে পাঠানো হবে
+
+    // filter বানানো: admin হলে সব, না হলে শুধু user-এর
+    const filter = role === "admin" ? { status: "approved" } : { status: "approved", userEmail: email };
+
+    const approvedBookings = await bookingsCollection.find(filter).toArray();
+
+    const totalApproved = approvedBookings.length;
+
+    res.send({ totalApproved });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to fetch total Approved bookings" });
+  }
+});
+
+
+// GET /api/bookings/approved/total
+app.get("/api/bookings/confirmed/total", async (req, res) => {
+  try {
+    const { role, email } = req.query; // frontend থেকে query param হিসেবে পাঠানো হবে
+
+    // filter বানানো: admin হলে সব, না হলে শুধু user-এর
+    const filter = role === "admin" ? { status: "confirmed" } : { status: "confirmed", userEmail: email };
+
+    const confirmedBookings = await bookingsCollection.find(filter).toArray();
+
+    const totalConfirmed = confirmedBookings.length;
+
+    res.send({ totalConfirmed });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to fetch total Approved bookings" });
+  }
+});
+
+
 
     // Get single Booking
     app.get('/bookings/:id', verifyFBToken, async (req, res) => {
@@ -460,6 +526,42 @@ app.post('/payments', verifyFBToken, async(req, res) => {
 
   res.send(result, bookingResult) 
 });
+
+
+// GET /api/payments/total
+app.get("/api/payments/total", async (req, res) => {
+  try {
+    const { role, email } = req.query;
+
+    const filter = role === "admin" ? {} : { email };
+    const payments = await paymentsCollection.find(filter).toArray();
+    const totalPayments = payments.reduce((sum, p) => sum + p.price, 0);
+
+    res.send({ totalPayments });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to fetch total payments" });
+  }
+});
+
+
+// GET /api/paymentsLength/total
+app.get("/api/payments/length", async (req, res) => {
+  try {
+    const { role, email } = req.query;
+
+    const filter = role === "admin" ? {} : { email };
+    const payments = await paymentsCollection.find(filter).toArray();
+    const totalPaymentsLength = payments.length;
+
+    res.send({ totalPaymentsLength });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: "Failed to fetch total payments Length" });
+  }
+});
+
+
 
 // Get Payments History
 app.get('/payments', verifyFBToken, async (req, res) => {
